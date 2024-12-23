@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FileSystem {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      FileType // Directory or File
+  size      Int? // Size for files (optional, null for directories)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  closure      ClosureTable[] // Relationship with the closure table
+  ClosureTable ClosureTable[]
+  ClosureTable ClosureTable[]
+}
+
+enum FileType {
+  FILE
+  DIRECTORY
+}
+
+// Closure table to represent ancestor-descendant relationships
+model ClosureTable {
+  id           Int @id @default(autoincrement())
+  ancestorId   Int
+  descendantId Int
+  depth        Int // How far the descendant is from the ancestor
+
+  ancestor     FileSystem  @relation("Ancestor", fields: [ancestorId], references: [id])
+  descendant   FileSystem  @relation("Descendant", fields: [descendantId], references: [id])
+  FileSystem   FileSystem? @relation(fields: [fileSystemId], references: [id])
+  fileSystemId Int?
+
+  @@unique([ancestorId, descendantId]) // Ensures each ancestor-descendant relationship is unique
+}
